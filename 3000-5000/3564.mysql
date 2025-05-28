@@ -1,0 +1,36 @@
+# Write your MySQL query statement below
+# Write your MySQL query statement below
+
+with quarter_sales_agg as
+(
+    select 
+    QUARTER(DATE_ADD(sales.sale_date, INTERVAL 1 MONTH)) as qtr_raw,
+    products.category,
+    sum(sales.quantity) as tot_qty,
+    sum(sales.quantity * sales.price) as tot_rev
+    from sales, products
+    where sales.product_id = products.product_id
+    group by 1,
+    2
+)
+
+select
+case when qtr_raw = '1' then 'Winter'
+when qtr_raw = '2' then 'Spring'
+when qtr_raw = '3' then 'Summer'
+when qtr_Raw = '4' then 'Fall'
+else 'N/A' end as season,
+category,
+tot_qty as "total_quantity",
+tot_rev as "total_revenue"
+from
+(
+    select qtr_raw,
+    category,
+    tot_qty,
+    tot_rev,
+    row_number() over (partition by qtr_raw order by tot_qty desc, tot_rev desc) as qtr_cat_rn
+    from quarter_sales_agg
+) qtr_rk
+where qtr_cat_rn = 1
+order by 1
